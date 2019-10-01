@@ -21,10 +21,13 @@ import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.RandomDocumentPicks;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.BeforeClass;
-import org.elasticsearch.plugin.ingest.fingerprint.FingerprintProcessor;
 
 import java.security.MessageDigest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 public class FingerprintProcessorTests extends ESTestCase {
 
@@ -96,7 +99,8 @@ public class FingerprintProcessorTests extends ESTestCase {
 
     }
 
-    private IngestDocument helperFingerprintProcessorExecute(String targetField, List<String> sourceField, String algorithm) throws Exception {
+    private IngestDocument helperFingerprintProcessorExecute(String targetField, List<String> sourceField,
+                                                             String algorithm) throws Exception {
 
         IngestDocument ingestDoc = RandomDocumentPicks.randomIngestDocument(random(), defaultTestDoc);
 

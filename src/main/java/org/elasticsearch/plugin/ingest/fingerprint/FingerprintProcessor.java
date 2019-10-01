@@ -27,7 +27,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
-import static org.elasticsearch.ingest.ConfigurationUtils.*;
+import static org.elasticsearch.ingest.ConfigurationUtils.readList;
+import static org.elasticsearch.ingest.ConfigurationUtils.readOptionalStringProperty;
 
 public class FingerprintProcessor extends AbstractProcessor {
 
