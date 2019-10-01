@@ -1,0 +1,41 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+    }
+
+    dependencies {
+        classpath "org.elasticsearch.gradle:build-tools:${elasticsearchVersion}"
+    }
+}
+
+group 'org.lhuet.elasticsearch.plugin.ingest'
+version = "${elasticsearchVersion}.0"
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'elasticsearch.esplugin'
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+esplugin {
+    name 'ingest-fingerprint'
+    description 'Ingest Fingerprint processor creates consistent hashes of one or more fields'
+    classname 'org.elasticsearch.plugin.ingest.fingerprint.IngestFingerprintPlugin'
+}
+
+project.licenseFile= file('LICENSE.txt')
+project.noticeFile= file('NOTICE.txt')
+
+// In this section you declare the dependencies for your production and test code
+// Note, the two dependencies are not really needed as the buildscript dependency gets them in already
+// they are just here as an example
+dependencies {
+    compile "org.elasticsearch:elasticsearch:${elasticsearchVersion}"
+    testCompile "org.elasticsearch.test:framework:${elasticsearchVersion}"
+}
+
+dependencyLicenses.enabled = false
+
+thirdPartyAudit.enabled = false

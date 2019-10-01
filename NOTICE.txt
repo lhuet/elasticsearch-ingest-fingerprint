@@ -1,0 +1,2 @@
+Elasticsearch ingest Fingerprint Plugin
+Copyright 2019 Laurent HUET
