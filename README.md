@@ -16,6 +16,7 @@ Pipeline parameters:
 - `field` (required): Array containing the String document properties used for the hash.
 - `target_field` (optional, default value `_id`): Field added to the document with the hash value (in Base64)
 - `method` (optional, default value `SHA1`): Hash algorithm 
+- `base64` (optional, default value `false`): Hash encoded in Base64 (Hex encoded if false, default behaviour)
 
 # Build / Install
 
