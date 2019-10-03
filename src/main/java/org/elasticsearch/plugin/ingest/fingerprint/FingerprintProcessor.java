@@ -26,9 +26,12 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import static org.elasticsearch.ingest.ConfigurationUtils.readBooleanProperty;
 import static org.elasticsearch.ingest.ConfigurationUtils.readList;
 import static org.elasticsearch.ingest.ConfigurationUtils.readOptionalStringProperty;
+
 
 public class FingerprintProcessor extends AbstractProcessor {
 
@@ -37,31 +40,41 @@ public class FingerprintProcessor extends AbstractProcessor {
     private final String target;
     private final List<String> source;
     private final String method;
+    private final boolean base64encode;
 
-    public FingerprintProcessor(String tag, String target, List<String> source, String method) {
+    public FingerprintProcessor(String tag, String target, List<String> source, String method, boolean base64encode) {
         super(tag);
         this.target = target;
         this.source = source;
         this.method = method;
+        this.base64encode = base64encode;
     }
 
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
 
-        // TODO: [Performance] Use a MessageDisgest pool object to prevent creating a new one for each document
+        // A first try with a MessageDigest object pool was not very concluant.
+        // Thus keeping the code simple seems to be a good approach for now
         MessageDigest md = MessageDigest.getInstance(this.method);
-
 
         for (String field: source) {
             md.update(ingestDocument.getFieldValue(field, String.class).getBytes("UTF-8"));
         }
         byte[] hash = md.digest();
 
-        if (target.equals("_id")) {
-            ingestDocument.getSourceAndMetadata().put(IngestDocument.MetaData.ID.getFieldName(),Base64.getEncoder().encodeToString(hash));
+        String encodedHash;
+        if (base64encode) {
+            encodedHash = Base64.getEncoder().encodeToString(hash);
         }
         else {
-            ingestDocument.setFieldValue(target, Base64.getEncoder().encodeToString(hash));
+            encodedHash = toHexString(hash);
+        }
+
+        if (target.equals("_id")) {
+            ingestDocument.getSourceAndMetadata().put(IngestDocument.MetaData.ID.getFieldName(), encodedHash);
+        }
+        else {
+            ingestDocument.setFieldValue(target, encodedHash);
         }
 
         return ingestDocument;
@@ -84,7 +97,12 @@ public class FingerprintProcessor extends AbstractProcessor {
         return method;
     }
 
+    public boolean isBase64encode() {
+        return base64encode;
+    }
+
     public static final class Factory implements Processor.Factory {
+
 
         @Override
         public FingerprintProcessor create(Map<String, Processor.Factory> processorFactories, String tag, Map<String, Object> config)
@@ -92,7 +110,7 @@ public class FingerprintProcessor extends AbstractProcessor {
             // Target is optional. If not set, we put the hash value as the document Id
             String target = readOptionalStringProperty(TYPE, tag, config, "target_field");
             if (target == null) target = "_id";
-            // Field is optional. If not set, we used all the field values sorted by lexical order
+            // Fields source for the hash
             List<String> source = readList(TYPE, tag, config, "field");
             if (source == null) source = Arrays.asList("_all");
             // Method is optional. Use SHA-1 by default
@@ -103,10 +121,33 @@ public class FingerprintProcessor extends AbstractProcessor {
             else {
                 method = Method.fromString(method).getAlgorithm();
             }
+            // hash is Hex encoding by default except if base64 is set to true
+            Boolean base64encode = readBooleanProperty(TYPE, tag, config, "base64", false);
 
-            return new FingerprintProcessor(tag, target, source, method);
+            return new FingerprintProcessor(tag, target, source, method, base64encode);
         }
     }
+
+    private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
+
+    /**
+     * Format a byte array as a hex string.
+     *
+     * @param bytes the input to be represented as hex.
+     * @return a hex representation of the input as a String.
+     */
+    public static String toHexString(byte[] bytes) {
+        Objects.requireNonNull(bytes);
+        StringBuilder sb = new StringBuilder(2 * bytes.length);
+
+        for (int i = 0; i < bytes.length; i++) {
+            byte b = bytes[i];
+            sb.append(HEX_DIGITS[b >> 4 & 0xf]).append(HEX_DIGITS[b & 0xf]);
+        }
+
+        return sb.toString();
+    }
+
 
     enum Method {
         MD5("MD5"),

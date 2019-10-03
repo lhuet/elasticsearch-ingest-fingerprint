@@ -1,0 +1,31 @@
+---
+"Test fingerprint processor with defaults":
+  - do:
+      ingest.put_pipeline:
+        id: "defaults_pipeline"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "fingerprint" : {
+                  "field" : ["message"]
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: _doc
+        pipeline: "defaults_pipeline"
+        body: {message: "my test string value"}
+
+  - do:
+      get:
+        index: test
+        type: _doc
+        id: 2418e4e3ceaae41104ee4a8ec739fac2bf20ffa2
+  - match: { _source.message: "my test string value" }

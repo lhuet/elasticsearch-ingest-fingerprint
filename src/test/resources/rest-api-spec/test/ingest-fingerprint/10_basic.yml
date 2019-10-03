@@ -1,4 +1,4 @@
-"ingest-csv plugin installed":
+"ingest-fingerprint plugin installed":
     - do:
         cluster.state: {}
 

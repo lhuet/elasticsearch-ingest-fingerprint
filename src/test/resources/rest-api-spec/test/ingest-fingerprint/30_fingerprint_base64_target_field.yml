@@ -1,0 +1,36 @@
+---
+"Test fingerprint processor with base64 hash on a target field":
+  - do:
+      ingest.put_pipeline:
+        id: "base64_target_pipeline"
+        body:  >
+          {
+            "description": "_description",
+            "processors": [
+              {
+                "fingerprint" : {
+                  "field": ["message"],
+                  "target_field": "fingerprint",
+                  "base64": true
+                }
+              }
+            ]
+          }
+  - match: { acknowledged: true }
+
+  - do:
+      index:
+        index: test
+        type: _doc
+        id: 1
+        pipeline: "base64_target_pipeline"
+        body: {message: "my test string value"}
+
+  - do:
+      get:
+        index: test
+        type: _doc
+        id: 1
+  - match: { _source.message: "my test string value" }
+  - match: { _source.fingerprint: "JBjk486q5BEE7kqOxzn6wr8g/6I=" }
+
